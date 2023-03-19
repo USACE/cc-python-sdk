@@ -1,35 +1,42 @@
-from .payload import Payload
 import abc
-
+from .payload import Payload
+from .store_type import StoreType
+from .get_object_input import GetObjectInput
+from .pull_object_input import PullObjectInput
+from .put_object_input import PutObjectInput
 
 class CCStore(metaclass=abc.ABCMeta):
     """A base class for implementing a data store.
 
-    This class defines a set of abstract methods for storing and retrieving data. To use this class, you must create a
-    subclass and implement each of the abstract methods.
+    This class defines a set of abstract methods for storing and retrieving
+    data. To use this class, you must create a subclass and implement each of
+    the abstract methods.
 
     Attributes:
         None
 
     Methods:
-        - put_object(input): stores the given input in the store, returns true on success and false on failure
-        - pull_object(input): retrieves the input from the store, returns true on success and false on failure
+        - put_object(input): stores the given input in the store, returns true
+          on success and false on failure
+        - pull_object(input): retrieves the input from the store, returns true
+          on success and false on failure
         - get_object(input): retrieves the object bytes from the store
         - get_payload(): retrieves the payload from the store
         - root_path(): retrieves the root path of the store
-        - handles_data_store_type(datastore_type): returns whether the given data store type is handled by this class
+        - handles_data_store_type(datastore_type): returns whether the given
+          data store type is handled by this class
     """
 
     @abc.abstractmethod
-    def put_object(self, input) -> bool:
+    def put_object(self, input: PutObjectInput) -> bool:
         pass
 
     @abc.abstractmethod
-    def pull_object(self, input) -> bool:
+    def pull_object(self, input: PullObjectInput) -> bool:
         pass
 
     @abc.abstractmethod
-    def get_object(self, input) -> bytes:
+    def get_object(self, input: GetObjectInput) -> bytes:
         pass
 
     @abc.abstractmethod
@@ -41,5 +48,5 @@ class CCStore(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def handles_data_store_type(self, datastore_type) -> bool:
+    def handles_data_store_type(self, data_store_type: StoreType) -> bool:
         pass

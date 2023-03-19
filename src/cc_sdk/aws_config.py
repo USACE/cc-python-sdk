@@ -1,5 +1,5 @@
-from attr import define, field, asdict, validators
 import json
+from attr import define, field, asdict, validators
 
 
 @define(auto_attribs=True)
@@ -29,10 +29,8 @@ class AWSConfig:
 
     Methods:
     - serialize(): Returns a JSON string representation of the attributes.
-    
+
     Raises:
-    - ValueError:
-        If a non-serializable object is set for the session attribute.
     - TypeError:
         If the wrong type of object is set for an attribute.
     """

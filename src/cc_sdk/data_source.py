@@ -1,6 +1,6 @@
-from attr import define, field, asdict, validators
 import json
-from .validators import validate_string_list
+from attr import define, field, asdict, validators
+from .validators import validate_homogeneous_list
 
 
 @define(auto_attribs=True, frozen=True)
@@ -23,7 +23,7 @@ class DataSource:
 
     Raises:
     - ValueError:
-        If a non-serializable object is set for the session attribute.
+        If a non-serializable object is set for the attribute.
     - TypeError:
         If the wrong type of object is set for an attribute.
     - FrozenInstanceError:
@@ -35,9 +35,15 @@ class DataSource:
     store_name: str = field(
         validator=[validators.instance_of(str)],
     )
-    paths: list[str] = field(validator=[validate_string_list])
+    paths: list[str] = field(
+        validator=[
+            lambda instance, attribute, value: validate_homogeneous_list(
+                instance, attribute, value, str
+            )
+        ]
+    )
 
-    def serialize(self):
+    def serialize(self) -> str:
         """
         Serializes the class as a json string
 

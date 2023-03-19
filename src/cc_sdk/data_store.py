@@ -1,9 +1,26 @@
-from attr import define, field, setters, asdict, validators
 import json
+from typing import Any
+from attr import define, field, setters, asdict, validators
 from .validators import validate_serializable
-from .store_type import StoreType, StoreTypeEncoder
+from .store_type import StoreType
+from .json_encoder import EnumEncoder
 
-@define(auto_attribs=True)
+
+def convert_store_type(cls, fields):
+    results = []
+    for field in fields:
+        if field.converter is not None:
+            results.append(field)
+            continue
+        if field.type in {StoreType, "store_type"}:
+            converter = lambda s: StoreType.__members__[s] if isinstance(s, str) else s
+        else:
+            converter = None
+        results.append(field.evolve(converter=converter))
+    return results
+
+
+@define(auto_attribs=True, field_transformer=convert_store_type)
 class DataStore:
     """
     A class that represents a data store and its attributes.
@@ -48,13 +65,13 @@ class DataStore:
     ds_profile: str = field(
         on_setattr=setters.frozen, validator=[validators.instance_of(str)]
     )
-    session: any = field(default=None, validator=[validate_serializable])
+    session: Any = field(default=None, validator=[validate_serializable])
 
-    def serialize(self):
+    def serialize(self) -> str:
         """
         Serializes the class as a json string
 
         Returns:
         - str: JSON string representation of the attributes
         """
-        return json.dumps(asdict(self), cls=StoreTypeEncoder)
+        return json.dumps(asdict(self), cls=EnumEncoder)

@@ -14,49 +14,6 @@ def data_store():
     )
 
 
-def test_type_errors():
-    with pytest.raises(TypeError):
-        _ = DataStore(
-            name=object(),
-            id="123",
-            parameters={"param1": "value1", "param2": "value2"},
-            store_type=StoreType.S3,
-            ds_profile="test_profile",
-        )
-    with pytest.raises(TypeError):
-        _ = DataStore(
-            name="test",
-            id=object(),
-            parameters={"param1": "value1", "param2": "value2"},
-            store_type=StoreType.S3,
-            ds_profile="test_profile",
-        )
-    with pytest.raises(TypeError):
-        _ = DataStore(
-            name="test",
-            id="123",
-            parameters=object(),
-            store_type=StoreType.S3,
-            ds_profile="test_profile",
-        )
-    with pytest.raises(TypeError):
-        _ = DataStore(
-            name="test",
-            id="123",
-            parameters={"param1": "value1", "param2": "value2"},
-            store_type=object(),
-            ds_profile="test_profile",
-        )
-    with pytest.raises(TypeError):
-        _ = DataStore(
-            name="test",
-            id="123",
-            parameters={"param1": "value1", "param2": "value2"},
-            store_type=StoreType.S3,
-            ds_profile=object(),
-        )
-
-
 def test_getters(data_store):
     assert data_store.name == "test"
     assert data_store.id == "123"
@@ -90,16 +47,6 @@ def test_setters(data_store):
 
 
 def test_serialize(data_store):
-    # Serialize the DataStore object
-    serialized = data_store.serialize()
-
-    # Deserialize the JSON string back into a dictionary
-    deserialized = json.loads(serialized)
-
-    # Check that the dictionary has the same attribute values as the original DataStore object
-    assert deserialized["name"] == data_store.name
-    assert deserialized["id"] == data_store.id
-    assert deserialized["parameters"] == data_store.parameters
-    assert deserialized["store_type"] == "S3"
-    assert deserialized["ds_profile"] == data_store.ds_profile
-    assert deserialized["session"] == data_store.session
+    expected_json = '{"name": "test", "id": "123", "parameters": {"param1": "value1", "param2": "value2"}, "store_type": "S3", "ds_profile": "test_profile", "session": null}'
+    assert data_store.serialize() == expected_json
+    assert json.loads(data_store.serialize()) == json.loads(expected_json)

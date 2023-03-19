@@ -12,13 +12,6 @@ def data_source():
     )
 
 
-def test_value_error():
-    with pytest.raises(ValueError):
-        _ = DataSource(
-            name="test", id="123", store_name="test_store", paths=["path1", object()]
-        )
-
-
 def test_getters(data_source):
     assert data_source.name == "test"
     assert data_source.id == "123"

@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+.pytest_cache/
 
 # C extensions
 *.so
@@ -66,6 +67,9 @@ target/
 # Pycharm
 .idea
 
+# vscode
+.vscode/
+
 # Spyder
 .spyproject/
 
@@ -81,6 +85,3 @@ target/
 
 # Mypy cache
 .mypy_cache/
-
-# MBI data folder (uncomment after first commit to keep large files out of version control)
-/*data*/
