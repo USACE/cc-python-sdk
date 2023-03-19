@@ -68,7 +68,8 @@ class FileDataStoreS3(FileDataStore):
         return self.upload_to_s3(self.post_fix + "/" + path, data.getvalue())
 
     def delete(self, path: str) -> bool:
-        key = self.post_fix + "/" + path
+        # standard file separators, replace \ with /
+        key = os.path.join(self.post_fix, path).replace("\\", "/")
         if self.aws_s3 is not None:
             self.aws_s3.delete_object(Bucket=self.bucket, Key=key)
             return True

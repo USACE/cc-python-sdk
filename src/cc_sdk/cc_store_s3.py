@@ -24,13 +24,13 @@ class CCStoreS3(CCStore):
     - CC_AWS_SECRET_ACCESS_KEY: AWS credentials
     - CC_AWS_DEFAULT_REGION: the region the bucket is in
     - CC_AWS_S3_BUCKET: the bucket name to use
-    - CC_S3_ENDPOINT: the AWS S3 endpoint for the bucket
     - CC_EVENT_NUMBER: CC event number to use
     - CC_ROOT: The root prefix on S3 where the payload will be stored in:
         s3://<CC_AWS_S3_BUCKET>/<CC_ROOT>/<CC_EVENT_NUMBER>/payload
 
     Optional:
     - CC_S3_MOCK: True or False. If true, bucket will be mocked
+    - CC_S3_ENDPOINT: the AWS S3 endpoint for the bucket
     - CC_S3_DISABLE_SSL: True or False. If true, bucket will not use SSL
     - CC_S3_FORCE_PATH_STYLE: True or False. If true, bucket will force path style
     """
