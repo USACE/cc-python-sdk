@@ -2,6 +2,8 @@ import json
 import pytest
 from cc_sdk import AWSConfig
 
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture
 def aws_config():
@@ -60,6 +62,8 @@ def test_setters(aws_config):
 
 
 def test_serialize(aws_config):
-    expected_json = '{"aws_config_name": "test", "aws_access_key_id": "my_access_key", "aws_secret_access_key_id": "my_secret_key", "aws_region": "us-west-2", "aws_bucket": "my_bucket", "aws_mock": true, "aws_endpoint": "https://my-endpoint.com", "aws_disable_ssl": true, "aws_force_path_style": true}'
-    assert aws_config.serialize() == expected_json
+    expected_json = '{"aws_config_name": "test", "aws_access_key_id": "my_access_key", "aws_secret_access_key_id": \
+        "my_secret_key", "aws_region": "us-west-2", "aws_bucket": "my_bucket", "aws_mock": true, "aws_endpoint": \
+            "https://my-endpoint.com", "aws_disable_ssl": true, "aws_force_path_style": true}'
+    assert aws_config.serialize() == json.dumps(json.loads(expected_json))
     assert json.loads(aws_config.serialize()) == json.loads(expected_json)

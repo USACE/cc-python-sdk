@@ -1,7 +1,7 @@
 import json
 
 
-def validate_serializable(instance, attribute, value):
+def validate_serializable(_instance, _attribute, value):
     """
     A validator that ensures an attribute is JSON serializable.
 
@@ -21,11 +21,11 @@ def validate_serializable(instance, attribute, value):
     """
     try:
         json.dumps(value)
-    except TypeError:
-        raise ValueError(f"Attributes must be JSON serializable")
+    except TypeError as exc:
+        raise ValueError("Attributes must be JSON serializable") from exc
 
 
-def validate_range(instance, attribute, value, lower_bound, upper_bound):
+def validate_range(_instance, _attribute, value, lower_bound, upper_bound):
     """
     A validator that ensures an value is great than or less than a set of
     bounding variables.
@@ -52,7 +52,7 @@ def validate_range(instance, attribute, value, lower_bound, upper_bound):
         raise ValueError("Value out of bounds")
 
 
-def validate_homogeneous_list(instance, attribute, value, type):
+def validate_homogeneous_list(_instance, attribute, value, the_type):
     """
     A validator that ensures an attribute is a list of strings
 
@@ -64,7 +64,7 @@ def validate_homogeneous_list(instance, attribute, value, type):
         The name of the attribute.
     value : any
         The value of the attribute.
-    type: Type
+    the_type: Type
         The type of the elements of the list.
 
     Raises:
@@ -73,6 +73,6 @@ def validate_homogeneous_list(instance, attribute, value, type):
         If an incorrect value is set for the attribute.
     """
     if not isinstance(value, list):
-        raise ValueError(f"{str(attribute)} must be a list of {str(type)}")
-    if not all(isinstance(path, type) for path in value):
-        raise ValueError(f"{str(attribute)} must be a list of {str(type)}")
+        raise ValueError(f"{str(attribute)} must be a list of {str(the_type)}")
+    if not all(isinstance(path, the_type) for path in value):
+        raise ValueError(f"{str(attribute)} must be a list of {str(the_type)}")

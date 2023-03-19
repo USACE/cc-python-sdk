@@ -2,6 +2,8 @@ import json
 import pytest
 from cc_sdk import Payload, DataSource, DataStore, StoreType
 
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture
 def payload():
@@ -93,11 +95,25 @@ def test_stores_setter(payload):
 
 
 def test_serialize(payload):
-    expected_json = '{"attributes": {"attr1": "value1", "attr2": 2}, "stores": [{"name": "store1", "id": "store_id1", "parameters": {"param1": "value1"}, "store_type": "S3", "ds_profile": "profile1", "session": null}, {"name": "store2", "id": "store_id2", "parameters": {"param2": "value2"}, "store_type": "S3", "ds_profile": "profile2", "session": null}], "inputs": [{"name": "input1", "id": "input_id1", "store_name": "store1", "paths": ["/path/to/data1"]}, {"name": "input2", "id": "input_id2", "store_name": "store2", "paths": ["/path/to/data2"]}], "outputs": [{"name": "output1", "id": "output_id1", "store_name": "store1", "paths": ["/path/to/output1"]}, {"name": "output2", "id": "output_id2", "store_name": "store2", "paths": ["/path/to/output2"]}]}'
-    assert payload.serialize() == expected_json
+    expected_json = '{"attributes": {"attr1": "value1", "attr2": 2}, "stores": [{"name": "store1", "id": "store_id1", \
+        "parameters": {"param1": "value1"}, "store_type": "S3", "ds_profile": "profile1"}, {"name": \
+            "store2", "id": "store_id2", "parameters": {"param2": "value2"}, "store_type": "S3", "ds_profile": \
+                "profile2"}], "inputs": [{"name": "input1", "id": "input_id1", "store_name": \
+                    "store1", "paths": ["/path/to/data1"]}, {"name": "input2", "id": "input_id2", "store_name": \
+                        "store2", "paths": ["/path/to/data2"]}], "outputs": [{"name": "output1", "id": "output_id1", \
+                            "store_name": "store1", "paths": ["/path/to/output1"]}, {"name": "output2", "id": \
+                                "output_id2", "store_name": "store2", "paths": ["/path/to/output2"]}]}'
+    assert payload.serialize() == json.dumps(json.loads(expected_json))
     assert json.loads(payload.serialize()) == json.loads(expected_json)
 
 
 def test_from_json(payload):
-    payload_str = '{"attributes": {"attr1": "value1", "attr2": 2}, "stores": [{"name": "store1", "id": "store_id1", "parameters": {"param1": "value1"}, "store_type": "S3", "ds_profile": "profile1", "session": null}, {"name": "store2", "id": "store_id2", "parameters": {"param2": "value2"}, "store_type": "S3", "ds_profile": "profile2", "session": null}], "inputs": [{"name": "input1", "id": "input_id1", "store_name": "store1", "paths": ["/path/to/data1"]}, {"name": "input2", "id": "input_id2", "store_name": "store2", "paths": ["/path/to/data2"]}], "outputs": [{"name": "output1", "id": "output_id1", "store_name": "store1", "paths": ["/path/to/output1"]}, {"name": "output2", "id": "output_id2", "store_name": "store2", "paths": ["/path/to/output2"]}]}'
+    payload_str = '{"attributes": {"attr1": "value1", "attr2": 2}, "stores": [{"name": "store1", "id": "store_id1", \
+        "parameters": {"param1": "value1"}, "store_type": "S3", "ds_profile": "profile1", "session": null}, \
+            {"name": "store2", "id": "store_id2", "parameters": {"param2": "value2"}, "store_type": "S3", \
+                "ds_profile": "profile2", "session": null}], "inputs": [{"name": "input1", "id": "input_id1", \
+                    "store_name": "store1", "paths": ["/path/to/data1"]}, {"name": "input2", "id": "input_id2", \
+                        "store_name": "store2", "paths": ["/path/to/data2"]}], "outputs": [{"name": "output1", \
+                            "id": "output_id1", "store_name": "store1", "paths": ["/path/to/output1"]}, {"name": \
+                                "output2", "id": "output_id2", "store_name": "store2", "paths": ["/path/to/output2"]}]}'
     assert payload == Payload.from_json(payload_str)

@@ -1,7 +1,9 @@
-from cc_sdk.message import Message
 import json
 import pytest
 from attr.exceptions import FrozenInstanceError
+from cc_sdk.message import Message
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture

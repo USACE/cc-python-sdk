@@ -17,6 +17,6 @@ class ObjectState(Enum):
     when deserializing.
     """
 
-    Memory = 0
-    LocalDisk = 1
+    MEMORY = 0
+    LOCAL_DISK = 1
     # RemoteDisk = 2

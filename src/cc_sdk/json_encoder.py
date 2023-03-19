@@ -27,7 +27,7 @@ class EnumEncoder(json.JSONEncoder):
             If an object of an unsupported type is encountered.
     """
 
-    def default(self, obj):
-        if isinstance(obj, Enum):
-            return obj.name
-        return json.JSONEncoder.default(self, obj)
+    def default(self, o):
+        if isinstance(o, Enum):
+            return o.name
+        return json.JSONEncoder.default(self, o)

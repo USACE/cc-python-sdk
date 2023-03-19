@@ -1,6 +1,6 @@
 import json
-from typing import Any, Type
-from attr import define, field, setters, asdict, validators
+from typing import Any
+from attr import define, field, setters, asdict, validators, filters, fields
 from .data_source import DataSource
 from .data_store import DataStore
 from .json_encoder import EnumEncoder
@@ -63,6 +63,8 @@ class Payload:
     )
 
     def set_store(self, index: int, store: DataStore) -> None:
+        # assignment op does work, pylint just doesn't know it
+        # pylint: disable=unsupported-assignment-operation
         self.stores[index] = store
 
     def serialize(self) -> str:
@@ -72,7 +74,14 @@ class Payload:
         Returns:
         - str: JSON string representation of the attributes
         """
-        return json.dumps(asdict(self, recurse=True), cls=EnumEncoder)
+        # TODO, should we serialize to camelCase for attribute names?
+        # do not serialize DataStore.session
+        return json.dumps(
+            asdict(
+                self, recurse=True, filter=filters.exclude(fields(DataStore).session)
+            ),
+            cls=EnumEncoder,
+        )
 
     @staticmethod
     def from_json(json_str: str):
@@ -88,10 +97,8 @@ class Payload:
         Raises:
             JSONDecodeError: If the JSON string cannot be decoded.
 
-        Example:
-            >>> json_str = '{"attributes": {"attr1": "value1", "attr2": 2}, "stores": [{"name": "store1", "id": "store_id1", "parameters": {"param1": "value1"}, "store_type": "S3", "ds_profile": "profile1", "session": null}], "inputs": [{"name": "input1", "id": "input_id1", "store_name": "store1", "paths": ["/path/to/data1"]}], "outputs": [{"name": "output1", "id": "output_id1", "store_name": "store1", "paths": ["/path/to/output1"]}]}'
-            >>> payload = Payload.from_json(json_str)
         """
+        # TODO, should we expect camelCase for attribute names?
         json_dict = json.loads(json_str)
         stores = [DataStore(**store) for store in json_dict["stores"]]
         inputs = [DataSource(**input) for input in json_dict["inputs"]]

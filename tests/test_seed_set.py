@@ -1,7 +1,9 @@
-from cc_sdk.seed_set import SeedSet
 import json
 import pytest
 from attr.exceptions import FrozenInstanceError
+from cc_sdk.seed_set import SeedSet
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture

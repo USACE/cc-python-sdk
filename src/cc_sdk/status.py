@@ -24,19 +24,19 @@ class StatusLevel(Enum):
     SUCCEEDED = 2
 
 
-def convert_status_level(cls, fields):
+def convert_status_level(_, fields):
     results = []
-    for field in fields:
-        if field.converter is not None:
-            results.append(field)
+    for the_field in fields:
+        if the_field.converter is not None:
+            results.append(the_field)
             continue
-        if field.type in {StatusLevel, "status_level"}:
+        if the_field.type in {StatusLevel, "status_level"}:
             converter = (
                 lambda s: StatusLevel.__members__[s] if isinstance(s, str) else s
             )
         else:
             converter = None
-        results.append(field.evolve(converter=converter))
+        results.append(the_field.evolve(converter=converter))
     return results
 
 

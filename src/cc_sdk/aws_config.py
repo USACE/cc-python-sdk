@@ -43,7 +43,9 @@ class AWSConfig:
     aws_region: str = field(default="", validator=[validators.instance_of(str)])
     aws_bucket: str = field(default="", validator=[validators.instance_of(str)])
     aws_mock: bool = field(default=False, validator=[validators.instance_of(bool)])
-    aws_endpoint: str = field(default="", validator=[validators.instance_of(str)])
+    aws_endpoint: str | None = field(
+        default=None, validator=[validators.instance_of(str | None)]
+    )
     aws_disable_ssl: bool = field(
         default=False, validator=[validators.instance_of(bool)]
     )

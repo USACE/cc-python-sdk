@@ -2,6 +2,8 @@ import pytest
 from cc_sdk.pull_object_input import PullObjectInput
 from cc_sdk.store_type import StoreType
 
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture
 def pull_object_input():

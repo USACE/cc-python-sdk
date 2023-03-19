@@ -18,11 +18,12 @@ class PutObjectInput:
     - object_state : ObjectState
         The storage state of the object. readonly
     - data : bytes
-        The raw bytes of the data. readonly
-    - source_path : string
-        The source path of the object (includes file name or extension). readonly
-    - dest_path : string
-        The destination path of the object on the data store (includes file name or extension). readonly
+        The raw bytes of the data. readonly. optional, but required for in memory files.
+    - source_root_path : string
+        The source directory path of the object (includes file name or extension). readonly
+        optional, but required for local disk files.
+    - dest_root_path : string
+        The destination directory path of the object on the data store (includes file name or extension). readonly
 
     Raises:
     - TypeError:
@@ -37,6 +38,6 @@ class PutObjectInput:
         validator=[validators.instance_of(StoreType)],
     )
     object_state: ObjectState = field(validator=validators.instance_of(ObjectState))
-    data: bytes = field(validator=validators.instance_of(bytes))
-    source_path: str = field(validator=validators.instance_of(str))
-    dest_path: str = field(validator=validators.instance_of(str))
+    dest_root_path: str = field(validator=validators.instance_of(str))
+    source_root_path: str = field(default="", validator=validators.instance_of(str))
+    data: bytes = field(default=bytes(), validator=validators.instance_of(bytes))

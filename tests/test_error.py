@@ -1,7 +1,9 @@
-from cc_sdk.error import Error, ErrorLevel
 import json
 import pytest
 from attr.exceptions import FrozenInstanceError
+from cc_sdk.error import Error, ErrorLevel
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture
@@ -27,7 +29,9 @@ def test_serialize(error):
     assert expected_json == error.serialize()
     assert json.loads(error.serialize()) == json.loads(expected_json)
 
+
 def test_error_level_comparison():
+    # pylint: disable=too-many-statements, comparison-with-itself
     debug = ErrorLevel.DEBUG
     info = ErrorLevel.INFO
     warn = ErrorLevel.WARN

@@ -1,7 +1,9 @@
-from cc_sdk.status import Status, StatusLevel
 import json
 import pytest
 from attr.exceptions import FrozenInstanceError
+from cc_sdk.status import Status, StatusLevel
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture

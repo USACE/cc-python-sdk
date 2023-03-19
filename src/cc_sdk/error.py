@@ -1,9 +1,9 @@
 from enum import Enum
 import json
 from typing import Final
+from functools import total_ordering
 from attrs import define, field, validators, asdict
 from .json_encoder import EnumEncoder
-from functools import total_ordering
 
 
 @total_ordering
@@ -44,20 +44,20 @@ class ErrorLevel(Enum):
 # a set of all the enum values in the ErrorLevel enum is namespaced by the
 # ErrorLevelOptions class
 class ErrorLevelOptions:
-    all_opts: Final[set[ErrorLevel]] = set(ErrorLevel)
+    ALL_OPS: Final[set[ErrorLevel]] = set(ErrorLevel)
 
 
-def convert_error_level(cls, fields):
+def convert_error_level(_, fields):
     results = []
-    for field in fields:
-        if field.converter is not None:
-            results.append(field)
+    for the_field in fields:
+        if the_field.converter is not None:
+            results.append(the_field)
             continue
-        if field.type in {ErrorLevel, "error_level"}:
+        if the_field.type in {ErrorLevel, "error_level"}:
             converter = lambda s: ErrorLevel.__members__[s] if isinstance(s, str) else s
         else:
             converter = None
-        results.append(field.evolve(converter=converter))
+        results.append(the_field.evolve(converter=converter))
     return results
 
 

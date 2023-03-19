@@ -28,15 +28,15 @@ class CCStore(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def put_object(self, input: PutObjectInput) -> bool:
+    def put_object(self, put_input: PutObjectInput) -> bool:
         pass
 
     @abc.abstractmethod
-    def pull_object(self, input: PullObjectInput) -> bool:
+    def pull_object(self, pull_input: PullObjectInput) -> bool:
         pass
 
     @abc.abstractmethod
-    def get_object(self, input: GetObjectInput) -> bytes:
+    def get_object(self, get_input: GetObjectInput) -> bytes:
         pass
 
     @abc.abstractmethod

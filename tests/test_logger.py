@@ -6,8 +6,11 @@ from cc_sdk.message import Message
 from cc_sdk.error import Error, ErrorLevel
 from cc_sdk.status import Status, StatusLevel
 
+# pylint: disable=redefined-outer-name
+
 
 def test_logger_set_error_level():
+    # pylint: disable=protected-access
     logger = Logger(ErrorLevel.INFO, "test_sender")
     logger.set_error_level(ErrorLevel.WARN)
     assert logger._error_level == ErrorLevel.WARN

@@ -1,8 +1,9 @@
-import pytest
 import json
-
+import pytest
 from attr.exceptions import FrozenInstanceError
 from cc_sdk import DataSource
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture

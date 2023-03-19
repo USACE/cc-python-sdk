@@ -3,6 +3,8 @@ from pytest import fixture, raises
 from cc_sdk.get_object_input import GetObjectInput
 from cc_sdk.store_type import StoreType
 
+# pylint: disable=redefined-outer-name
+
 
 @fixture
 def input_obj():

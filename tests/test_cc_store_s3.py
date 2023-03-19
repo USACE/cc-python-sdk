@@ -1,4 +1,10 @@
-import json
+from unittest.mock import Mock
+import tempfile
+import os
+import shutil
+from moto import mock_s3
+import boto3
+from botocore.exceptions import ClientError
 import pytest
 from cc_sdk import (
     CCStoreS3,
@@ -14,12 +20,8 @@ from cc_sdk import (
     DataSource,
     DataStore,
 )
-from unittest.mock import Mock
-import tempfile
-import os
-import shutil
-from moto import mock_s3
-import boto3
+
+# pylint: disable=redefined-outer-name
 
 
 def test_initialize(monkeypatch):
@@ -45,10 +47,6 @@ def test_initialize(monkeypatch):
         environment_variables.CC_PROFILE + "_" + environment_variables.AWS_S3_BUCKET,
         "my_bucket",
     )
-    monkeypatch.setenv(
-        environment_variables.CC_PROFILE + "_" + environment_variables.S3_ENDPOINT,
-        "http://localhost:9000",
-    )
     monkeypatch.setenv(environment_variables.CC_MANIFEST_ID, "my_manifest")
     monkeypatch.setenv(environment_variables.CC_ROOT, "my_root")
     monkeypatch.setenv(
@@ -67,7 +65,7 @@ def test_initialize(monkeypatch):
     assert store.config.aws_secret_access_key_id == "my_secret_key"
     assert store.config.aws_region == "us-west-2"
     assert store.config.aws_bucket == "my_bucket"
-    assert store.config.aws_endpoint == "http://localhost:9000"
+    assert store.config.aws_endpoint is None
     assert store.manifest_id == "my_manifest"
     assert store.local_root_path == constants.LOCAL_ROOT_PATH
     assert store.bucket == "my_bucket"
@@ -107,10 +105,6 @@ def store(monkeypatch):
             + environment_variables.AWS_S3_BUCKET,
             "my_bucket",
         )
-        monkeypatch.setenv(
-            environment_variables.CC_PROFILE + "_" + environment_variables.S3_ENDPOINT,
-            "http://localhost:9000",
-        )
         monkeypatch.setenv(environment_variables.CC_MANIFEST_ID, "my_manifest")
         monkeypatch.setenv(environment_variables.CC_ROOT, "/tmp")
         monkeypatch.setenv(
@@ -131,18 +125,20 @@ def store(monkeypatch):
         )
 
         # create a mock S3 client
-        s3 = boto3.client("s3")
+        s3_client = boto3.client("s3")
         # create a mock S3 bucket
-        s3.create_bucket(Bucket="my_bucket")
+        s3_client.create_bucket(Bucket="my_bucket")
         # create and return an instance of the Store class
         store = CCStoreS3()
 
         yield store
-        response = s3.list_objects_v2(Bucket="my_bucket")
+        response = s3_client.list_objects_v2(Bucket="my_bucket")
         if "Contents" in response:
             delete_keys = [{"Key": obj["Key"]} for obj in response["Contents"]]
-            s3.delete_objects(Bucket="my_bucket", Delete={"Objects": delete_keys})
-        s3.delete_bucket(Bucket="my_bucket")
+            s3_client.delete_objects(
+                Bucket="my_bucket", Delete={"Objects": delete_keys}
+            )
+        s3_client.delete_bucket(Bucket="my_bucket")
 
 
 def test_handles_data_store_type(store):
@@ -154,10 +150,10 @@ def test_put_object_local_disk_file_not_found(store):
         "file_name": "test_file",
         "file_extension": "txt",
         "dest_store_type": StoreType.S3,
-        "object_state": ObjectState.LocalDisk,
+        "object_state": ObjectState.LOCAL_DISK,
         "data": bytes(),
-        "source_path": "/no/file/here",
-        "dest_path": "place/to/put/file",
+        "source_root_path": "/no/file/here",
+        "dest_root_path": "place/to/put/file",
     }
     with pytest.raises(FileNotFoundError):
         store.put_object(PutObjectInput(**input_data))
@@ -168,17 +164,17 @@ def test_put_object_local_disk_error_reading_file(store):
     with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
         tmp_file.write(b"Hello, world!")
         tmp_file.flush()
-        # Set the file permissions to read-only
-        os.chmod(tmp_file.name, 0o400)
+        # Set the file permissions to not readable
+        os.chmod(tmp_file.name, ~(0o400))
 
         input_data = {
             "file_name": os.path.basename(tmp_file.name),
             "file_extension": "",
             "dest_store_type": StoreType.S3,
-            "object_state": ObjectState.LocalDisk,
+            "object_state": ObjectState.LOCAL_DISK,
             "data": bytes(),
-            "source_path": os.path.dirname(tmp_file.name),
-            "dest_path": "place/to/put/file",
+            "source_root_path": os.path.dirname(tmp_file.name),
+            "dest_root_path": "place/to/put/file",
         }
 
         # Check that an IOError is raised when `store.put_object` is called
@@ -211,41 +207,42 @@ def test_put_object_local_disk_success(store, temp_dir):
             "file_name": os.path.basename(tmp_file.name),
             "file_extension": "",
             "dest_store_type": StoreType.S3,
-            "object_state": ObjectState.LocalDisk,
+            "object_state": ObjectState.LOCAL_DISK,
             "data": bytes(),
-            "source_path": tmp_file.name,
-            "dest_path": object_key,
+            "source_root_path": os.path.dirname(tmp_file.name),
+            "dest_root_path": "place/to/put/file",
         }
         assert store.put_object(PutObjectInput(**input_data)) is True
-        s3 = CCStoreS3.create_s3_client(store.config)
-        objects = s3.list_objects_v2(Bucket="my_bucket", Prefix=object_key)
+        s3_client = CCStoreS3.create_s3_client(store.config)
+        objects = s3_client.list_objects_v2(Bucket="my_bucket", Prefix=object_key)
         assert any(
             obj["Key"] == object_key for obj in objects.get("Contents", [])
         ), f"Object '{object_key}' does not exist in bucket '{store.config.bucket}'"
-        response = s3.get_object(Bucket="my_bucket", Key=object_key)
+        response = s3_client.get_object(Bucket="my_bucket", Key=object_key)
         assert (
             response["Body"].read() == b"Hello, world!"
         ), f"Object '{object_key}' in bucket '{store.config.bucket}' has unexpected contents"
 
 
 def test_put_object_memory_success(store):
-    object_key = "place/to/put/file/" + "memory_put_test"
+    dest_dir = "place/to/put/file"
     input_data = {
         "file_name": "memory_put_test",
         "file_extension": "",
         "dest_store_type": StoreType.S3,
-        "object_state": ObjectState.Memory,
+        "object_state": ObjectState.MEMORY,
         "data": b"Hello, world!",
-        "source_path": "memory",
-        "dest_path": object_key,
+        "source_root_path": "",
+        "dest_root_path": dest_dir,
     }
+    object_key = dest_dir + "/" + "memory_put_test"
     assert store.put_object(PutObjectInput(**input_data)) is True
-    s3 = CCStoreS3.create_s3_client(store.config)
-    objects = s3.list_objects_v2(Bucket="my_bucket", Prefix=object_key)
+    s3_client = CCStoreS3.create_s3_client(store.config)
+    objects = s3_client.list_objects_v2(Bucket="my_bucket", Prefix=object_key)
     assert any(
         obj["Key"] == object_key for obj in objects.get("Contents", [])
     ), f"Object '{object_key}' does not exist in bucket '{store.config.bucket}'"
-    response = s3.get_object(Bucket="my_bucket", Key=object_key)
+    response = s3_client.get_object(Bucket="my_bucket", Key=object_key)
     assert (
         response["Body"].read() == b"Hello, world!"
     ), f"Object '{object_key}' in bucket '{store.config.bucket}' has unexpected contents"
@@ -253,15 +250,15 @@ def test_put_object_memory_success(store):
 
 def test_pull_object_success(store, temp_dir):
     # put the object
-    object_key = "place/to/put/file/" + "memory_put_test"
+    dest_dir = "place/to/put/file"
     input_data = {
         "file_name": "memory_put_test",
         "file_extension": "",
         "dest_store_type": StoreType.S3,
-        "object_state": ObjectState.Memory,
+        "object_state": ObjectState.MEMORY,
         "data": b"Hello, world!",
-        "source_path": "memory",
-        "dest_path": object_key,
+        "source_root_path": "",
+        "dest_root_path": dest_dir,
     }
     assert store.put_object(PutObjectInput(**input_data)) is True
     # pull the object
@@ -274,8 +271,8 @@ def test_pull_object_success(store, temp_dir):
     }
     assert store.pull_object(PullObjectInput(**input_data)) is True
     pulled_filepath = os.path.join(temp_dir, "memory_put_test")
-    with open(pulled_filepath, "rb") as f:
-        contents = f.read()
+    with open(pulled_filepath, "rb") as the_file:
+        contents = the_file.read()
     assert (
         contents == b"Hello, world!"
     ), f"File at '{pulled_filepath}' has unexpected contents"
@@ -295,15 +292,15 @@ def test_pull_object_error(store, temp_dir):
 
 def test_get_object_success(store):
     # put the object
-    object_key = "place/to/put/file/" + "memory_put_test"
+    dest_dir = "place/to/put/file"
     input_data = {
         "file_name": "memory_put_test",
         "file_extension": "",
         "dest_store_type": StoreType.S3,
-        "object_state": ObjectState.Memory,
+        "object_state": ObjectState.MEMORY,
         "data": b"Hello, world!",
-        "source_path": "memory",
-        "dest_path": object_key,
+        "source_root_path": "",
+        "dest_root_path": dest_dir,
     }
     assert store.put_object(PutObjectInput(**input_data)) is True
     # pull the object
@@ -317,15 +314,15 @@ def test_get_object_success(store):
 
 
 def test_get_object_error(store):
-    with pytest.raises(Exception):
-        # get the object that doesn't exist
-        input_data = {
-            "file_name": "not_a_real_file",
-            "file_extension": "",
-            "source_store_type": StoreType.S3,
-            "source_root_path": "place/to/put/file",
-        }
-        _ = store.pull_object(PullObjectInput(**input_data))
+    # pull the object that doesn't exist
+    input_data = {
+        "file_name": "not_a_real_file",
+        "file_extension": "",
+        "source_store_type": StoreType.S3,
+        "source_root_path": "no/file/here",
+    }
+    with pytest.raises(ClientError):
+        store.get_object(GetObjectInput(**input_data))
 
 
 @pytest.fixture
@@ -380,21 +377,32 @@ def payload():
 
 
 def test_read_json_model_payload_from_bytes(payload):
-    payload_bytes = b'{"attributes": {"attr1": "value1", "attr2": 2}, "stores": [{"name": "store1", "id": "store_id1", "parameters": {"param1": "value1"}, "store_type": "S3", "ds_profile": "profile1", "session": null}, {"name": "store2", "id": "store_id2", "parameters": {"param2": "value2"}, "store_type": "S3", "ds_profile": "profile2", "session": null}], "inputs": [{"name": "input1", "id": "input_id1", "store_name": "store1", "paths": ["/path/to/data1"]}, {"name": "input2", "id": "input_id2", "store_name": "store2", "paths": ["/path/to/data2"]}], "outputs": [{"name": "output1", "id": "output_id1", "store_name": "store1", "paths": ["/path/to/output1"]}, {"name": "output2", "id": "output_id2", "store_name": "store2", "paths": ["/path/to/output2"]}]}'
+    payload_bytes = b'{"attributes": {"attr1": "value1", "attr2": 2}, "stores": [{"name": "store1", "id": "store_id1", \
+        "parameters": {"param1": "value1"}, "store_type": "S3", "ds_profile": "profile1", "session": null}, \
+            {"name": "store2", "id": "store_id2", "parameters": {"param2": "value2"}, "store_type": "S3", \
+                "ds_profile": "profile2", "session": null}], "inputs": [{"name": "input1", "id": "input_id1", \
+                    "store_name": "store1", "paths": ["/path/to/data1"]}, {"name": "input2", "id": "input_id2", \
+                        "store_name": "store2", "paths": ["/path/to/data2"]}], "outputs": [{"name": "output1", "id": \
+                            "output_id1", "store_name": "store1", "paths": ["/path/to/output1"]}, {"name": "output2", \
+                                "id": "output_id2", "store_name": "store2", "paths": ["/path/to/output2"]}]}'
     assert payload == CCStoreS3.read_json_model_payload_from_bytes(payload_bytes)
+
+
+def test_set_payload(payload, store):
+    assert store.set_payload(payload) is True
 
 
 def test_get_payload(payload, store):
     # Create a temporary file for the payload and put on S3
-    path = store.root + "/" + store.manifest_id + "/" + constants.PAYLOAD_FILE_NAME
+    path = store.root + "/" + store.manifest_id
     input_data = {
         "file_name": constants.PAYLOAD_FILE_NAME,
         "file_extension": "",
         "dest_store_type": StoreType.S3,
-        "object_state": ObjectState.Memory,
+        "object_state": ObjectState.MEMORY,
         "data": payload.serialize().encode(),
-        "source_path": "memory",
-        "dest_path": path,
+        "source_root_path": "",
+        "dest_root_path": path,
     }
     assert store.put_object(PutObjectInput(**input_data)) is True
     assert store.get_payload() == payload

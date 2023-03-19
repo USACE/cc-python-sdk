@@ -17,6 +17,8 @@ from .cc_store import CCStore
 from .file_data_store import FileDataStore
 from .cc_store_s3 import CCStoreS3
 from .json_encoder import EnumEncoder
+from .file_data_store_s3 import FileDataStoreS3
+from .plugin_manager import PluginManager
 
 __all__ = [
     "DataStore",
@@ -41,4 +43,6 @@ __all__ = [
     "FileDataStore",
     "CCStoreS3",
     "EnumEncoder",
+    "FileDataStoreS3",
+    "PluginManager",
 ]

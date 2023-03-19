@@ -1,22 +1,22 @@
 import json
 from typing import Any
-from attr import define, field, setters, asdict, validators
+from attr import define, field, setters, asdict, validators, filters, fields
 from .validators import validate_serializable
 from .store_type import StoreType
 from .json_encoder import EnumEncoder
 
 
-def convert_store_type(cls, fields):
+def convert_store_type(_, all_fields):
     results = []
-    for field in fields:
-        if field.converter is not None:
-            results.append(field)
+    for the_field in all_fields:
+        if the_field.converter is not None:
+            results.append(the_field)
             continue
-        if field.type in {StoreType, "store_type"}:
+        if the_field.type in {StoreType, "store_type"}:
             converter = lambda s: StoreType.__members__[s] if isinstance(s, str) else s
         else:
             converter = None
-        results.append(field.evolve(converter=converter))
+        results.append(the_field.evolve(converter=converter))
     return results
 
 
@@ -65,7 +65,7 @@ class DataStore:
     ds_profile: str = field(
         on_setattr=setters.frozen, validator=[validators.instance_of(str)]
     )
-    session: Any = field(default=None, validator=[validate_serializable])
+    session: Any = field(default=None)
 
     def serialize(self) -> str:
         """
@@ -74,4 +74,8 @@ class DataStore:
         Returns:
         - str: JSON string representation of the attributes
         """
-        return json.dumps(asdict(self), cls=EnumEncoder)
+        # do not serialize the session object
+        return json.dumps(
+            asdict(self, filter=filters.exclude(fields(DataStore).session)),
+            cls=EnumEncoder,
+        )

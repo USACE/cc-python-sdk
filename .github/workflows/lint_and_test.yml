@@ -1,0 +1,41 @@
+name: Lint and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run pytest and pylint
+      run: |
+        pytest
+        pylint --fail-under=9 src/cc_sdk/*.py
+
+    - name: Stop the build if there are any linting errors or test failures
+      run: |
+        if [ $? -eq 0 ]; then
+          echo "All tests and linting passed."
+        else
+          echo "There are test failures or linting errors. Aborting the build." >&2
+          exit 1
+        fi

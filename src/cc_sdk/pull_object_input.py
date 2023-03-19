@@ -15,9 +15,9 @@ class PullObjectInput:
     - source_store_type : StoreType
         The type of data store the object will be pulled from. readonly
     - source_root_path : string
-        The source path of the object on the data store (does not include file name or extension and must not include a trailing slash). readonly
+        The source directory path of the object on the data store (does not include file name or extension). readonly.
     - dest_root_path : string
-        The destination path of the object (does not include file name or extension and must not include a trailing slash). readonly
+        The destination directory directory path of the object (does not include file name or extension). readonly
 
     Raises:
     - TypeError:
