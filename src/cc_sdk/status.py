@@ -19,9 +19,9 @@ class StatusLevel(Enum):
     when deserializing.
     """
 
-    COMPUTING = 0
-    FAILED = 1
-    SUCCEEDED = 2
+    COMPUTING = "COMPUTING"
+    FAILED = "FAILED"
+    SUCCEEDED = "SUCCEEDED"
 
 
 def convert_status_level(_, fields):
