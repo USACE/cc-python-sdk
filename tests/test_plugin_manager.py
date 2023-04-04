@@ -250,7 +250,7 @@ def test_event_number(plugin_manager):
 
 def test_find_data_source(plugin_manager):
     assert (
-        plugin_manager.find_data_source(
+        plugin_manager._find_data_source(
             "input1", plugin_manager.get_input_data_sources()
         ).name
         == "input1"
@@ -258,4 +258,4 @@ def test_find_data_source(plugin_manager):
 
 
 def test_find_data_store(plugin_manager):
-    assert plugin_manager.find_data_store("store1").name == "store1"
+    assert plugin_manager._find_data_store("store1").name == "store1"

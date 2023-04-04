@@ -216,7 +216,7 @@ class CCStoreS3(CCStore):
                 try:
                     with open(local_path, "rb") as the_file:
                         data = the_file.read()
-                        self.upload_to_s3(remote_path, data)
+                        self._upload_to_s3(remote_path, data)
                 except FileNotFoundError as exc:
                     raise FileNotFoundError from exc
                 except IOError as exc:
@@ -224,7 +224,7 @@ class CCStoreS3(CCStore):
                 return True
 
             case ObjectState.MEMORY:
-                self.upload_to_s3(remote_path, put_input.data)
+                self._upload_to_s3(remote_path, put_input.data)
                 return True
             case _:
                 return False
@@ -249,8 +249,8 @@ class CCStoreS3(CCStore):
             remote_path += "." + pull_input.file_extension
             local_path += "." + pull_input.file_extension
         try:
-            data = self.download_bytes_from_s3(remote_path)
-            self.write_input_stream_to_disk(io.BytesIO(data), local_path)
+            data = self._download_bytes_from_s3(remote_path)
+            self._write_input_stream_to_disk(io.BytesIO(data), local_path)
         except ClientError:
             return False
         except IOError:
@@ -274,7 +274,7 @@ class CCStoreS3(CCStore):
             # add extensions if used
             remote_path += "." + get_input.file_extension
         try:
-            return self.download_bytes_from_s3(remote_path)
+            return self._download_bytes_from_s3(remote_path)
         except ClientError as exc:
             raise exc
 
@@ -290,8 +290,8 @@ class CCStoreS3(CCStore):
             self.root, self.manifest_id, constants.PAYLOAD_FILE_NAME
         ).replace("\\", "/")
         try:
-            body = self.download_bytes_from_s3(path)
-            return self.read_json_model_payload_from_bytes(body)
+            body = self._download_bytes_from_s3(path)
+            return self._read_json_model_payload_from_bytes(body)
         except ClientError as exc:
             raise exc
 
@@ -308,20 +308,20 @@ class CCStoreS3(CCStore):
             self.root, self.manifest_id, constants.PAYLOAD_FILE_NAME
         ).replace("\\", "/")
         try:
-            self.upload_to_s3(path, payload.serialize().encode())
+            self._upload_to_s3(path, payload.serialize().encode())
             return True
         except ClientError:
             return False
 
     @staticmethod
-    def read_json_model_payload_from_bytes(data: bytes) -> Payload:
+    def _read_json_model_payload_from_bytes(data: bytes) -> Payload:
         """Helper method to decode the JSON to a Payload object"""
         try:
             return Payload.from_json(data.decode("utf-8"))
         except Exception as exc:
             raise exc
 
-    def write_input_stream_to_disk(
+    def _write_input_stream_to_disk(
         self, input_stream: io.BytesIO, output_destination: str
     ) -> None:
         directory = os.path.dirname(output_destination)
@@ -331,13 +331,13 @@ class CCStoreS3(CCStore):
         with open(output_destination, "wb") as output_file:
             output_file.write(bytes_data)
 
-    def upload_to_s3(self, object_key: str, file_bytes: bytes) -> None:
+    def _upload_to_s3(self, object_key: str, file_bytes: bytes) -> None:
         if self.aws_s3 is not None:
             self.aws_s3.put_object(Bucket=self.bucket, Key=object_key, Body=file_bytes)
         else:
             raise RuntimeError("AWS config not set.")
 
-    def download_bytes_from_s3(self, object_key: str) -> bytes:
+    def _download_bytes_from_s3(self, object_key: str) -> bytes:
         if self.aws_s3 is not None:
             response = self.aws_s3.get_object(Bucket=self.bucket, Key=object_key)
             file_bytes = response["Body"].read()

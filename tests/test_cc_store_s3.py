@@ -385,7 +385,7 @@ def test_read_json_model_payload_from_bytes(payload):
                         "store_name": "store2", "paths": ["/path/to/data2"]}], "outputs": [{"name": "output1", "id": \
                             "output_id1", "store_name": "store1", "paths": ["/path/to/output1"]}, {"name": "output2", \
                                 "id": "output_id2", "store_name": "store2", "paths": ["/path/to/output2"]}]}'
-    assert payload == CCStoreS3.read_json_model_payload_from_bytes(payload_bytes)
+    assert payload == CCStoreS3._read_json_model_payload_from_bytes(payload_bytes)
 
 
 def test_set_payload(payload, store):

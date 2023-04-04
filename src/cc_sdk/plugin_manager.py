@@ -77,12 +77,6 @@ class PluginManager:
 
         event_number(self) -> int:
         Returns the event number associated with the current instance.
-
-        find_data_source(self, name: str, data_sources: list[DataSource]) -> DataSource | None:
-        Finds and returns the data source object with the given name from the specified list of data sources.
-
-        find_data_store(self, name: str) -> DataStore | None:
-        Finds and returns the data store object with the given name from the payload stores.
     """
 
     def __init__(self):
@@ -183,7 +177,7 @@ class PluginManager:
         return self._payload
 
     def get_file_store(self, store_name: str) -> FileDataStore:
-        data_store = self.find_data_store(store_name)
+        data_store = self._find_data_store(store_name)
         if data_store is None:
             raise RuntimeError(f"DataStore with name '{store_name}' was not found.")
         if isinstance(data_store.session, FileDataStore):
@@ -191,19 +185,19 @@ class PluginManager:
         raise RuntimeError("DataStore session object is invalid.")
 
     def get_store(self, store_name: str) -> DataStore:
-        data_store = self.find_data_store(store_name)
+        data_store = self._find_data_store(store_name)
         if data_store is None:
             raise RuntimeError(f"DataStore with name '{store_name}' was not found")
         return data_store
 
     def get_input_data_source(self, name: str) -> DataSource:
-        data_source = self.find_data_source(name, self.get_input_data_sources())
+        data_source = self._find_data_source(name, self.get_input_data_sources())
         if data_source is None:
             raise RuntimeError(f"Input DataSource with name '{name}' was not found")
         return data_source
 
     def get_output_data_source(self, name: str) -> DataSource:
-        data_source = self.find_data_source(name, self.get_output_data_sources())
+        data_source = self._find_data_source(name, self.get_output_data_sources())
         if data_source is None:
             raise RuntimeError(f"Output DataSource with name '{name}' was not found")
         return data_source
@@ -243,7 +237,7 @@ class PluginManager:
         return store.get(data_source.paths[path_index])
 
     def file_reader_by_name(self, data_source_name: str, path_index: int) -> io.BytesIO:
-        data_source = self.find_data_source(
+        data_source = self._find_data_source(
             data_source_name, self.get_input_data_sources()
         )
         if data_source is None:
@@ -273,7 +267,7 @@ class PluginManager:
         event_number = int(val)
         return event_number
 
-    def find_data_source(
+    def _find_data_source(
         self, name: str, data_sources: list[DataSource]
     ) -> DataSource | None:
         for data_source in data_sources:
@@ -281,7 +275,7 @@ class PluginManager:
                 return data_source
         return None
 
-    def find_data_store(self, name: str) -> DataStore | None:
+    def _find_data_store(self, name: str) -> DataStore | None:
         # pylint can't determine attributes type
         # pylint: disable=not-an-iterable
         for data_store in self._payload.stores:

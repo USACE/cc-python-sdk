@@ -98,7 +98,7 @@ class Payload:
             JSONDecodeError: If the JSON string cannot be decoded.
 
         """
-        # TODO, should we expect camelCase for attribute names?
+        # TODO should we expect camelCase for attribute names?
         json_dict = json.loads(json_str)
         stores = [DataStore(**store) for store in json_dict["stores"]]
         inputs = [DataSource(**input) for input in json_dict["inputs"]]

@@ -39,10 +39,11 @@ class FileDataStoreS3(FileDataStore):
             # TODO, throw error?
             print("Missing S3 Root Paramter. Cannot create the store.")
 
-    def get_object(self, path: str):
-        return self.download_bytes_from_s3(path)
+    def _get_object(self, path: str):
+        """Alias for _download_bytes_from_s3"""
+        return self._download_bytes_from_s3(path)
 
-    def download_bytes_from_s3(self, object_key: str) -> bytes:
+    def _download_bytes_from_s3(self, object_key: str) -> bytes:
         # standard file separators, replace \ with /
         key = os.path.join(self.post_fix, object_key).replace("\\", "/")
         if self.aws_s3 is not None:
@@ -51,21 +52,21 @@ class FileDataStoreS3(FileDataStore):
             return file_bytes
         raise RuntimeError("AWS config not set.")
 
-    def upload_to_s3(self, object_key: str, file_bytes: bytes) -> bool:
+    def _upload_to_s3(self, object_key: str, file_bytes: bytes) -> bool:
         if self.aws_s3 is not None:
             self.aws_s3.put_object(Bucket=self.bucket, Key=object_key, Body=file_bytes)
             return True
         return False
 
     def copy(self, dest_store: FileDataStore, src_path: str, dest_path: str) -> bool:
-        data = self.get_object(src_path)
+        data = self._get_object(src_path)
         return dest_store.put(io.BytesIO(data), dest_path)
 
     def get(self, path: str) -> io.BytesIO:
-        return io.BytesIO(self.get_object(path))
+        return io.BytesIO(self._get_object(path))
 
     def put(self, data: io.BytesIO, path: str) -> bool:
-        return self.upload_to_s3(self.post_fix + "/" + path, data.getvalue())
+        return self._upload_to_s3(self.post_fix + "/" + path, data.getvalue())
 
     def delete(self, path: str) -> bool:
         # standard file separators, replace \ with /
