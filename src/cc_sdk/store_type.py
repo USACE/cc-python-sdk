@@ -18,7 +18,7 @@ class StoreType(Enum):
     readability and prevent errors when deserializing.
     """
 
-    S3 = 0
-    WS = 1
-    RDBMS = 2
-    EBS = 3
+    S3 = "S3"
+    WS = "WS"
+    RDBMS = "RDBMS"
+    EBS = "EBS"
