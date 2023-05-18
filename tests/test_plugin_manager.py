@@ -259,3 +259,142 @@ def test_find_data_source(plugin_manager):
 
 def test_find_data_store(plugin_manager):
     assert plugin_manager._find_data_store("store1").name == "store1"
+
+
+def test_unimplemented_store_types(monkeypatch):
+    # CCStore Env vars
+    monkeypatch.setenv(
+        environment_variables.CC_PROFILE
+        + "_"
+        + environment_variables.AWS_ACCESS_KEY_ID,
+        "my_access_key",
+    )
+    monkeypatch.setenv(
+        environment_variables.CC_PROFILE
+        + "_"
+        + environment_variables.AWS_SECRET_ACCESS_KEY,
+        "my_secret_key",
+    )
+    monkeypatch.setenv(
+        environment_variables.CC_PROFILE
+        + "_"
+        + environment_variables.AWS_DEFAULT_REGION,
+        "us-west-2",
+    )
+    monkeypatch.setenv(
+        environment_variables.CC_PROFILE + "_" + environment_variables.AWS_S3_BUCKET,
+        "my_bucket",
+    )
+    monkeypatch.setenv(environment_variables.CC_MANIFEST_ID, "my_manifest")
+    monkeypatch.setenv(environment_variables.CC_ROOT, "my_root")
+    monkeypatch.setenv(
+        environment_variables.CC_PROFILE + "_" + environment_variables.S3_MOCK, "True"
+    )
+    ## plugin env vars
+    monkeypatch.setenv(environment_variables.CC_PLUGIN_DEFINITION, "test_plugin")
+    monkeypatch.setenv(
+        environment_variables.CC_EVENT_NUMBER,
+        "000",
+    )
+    ## profile1 env vars
+    monkeypatch.setenv(
+        "profile1" + "_" + environment_variables.AWS_ACCESS_KEY_ID,
+        "my_access_key",
+    )
+    monkeypatch.setenv(
+        "profile1" + "_" + environment_variables.AWS_SECRET_ACCESS_KEY,
+        "my_secret_key",
+    )
+    monkeypatch.setenv(
+        "profile1" + "_" + environment_variables.AWS_DEFAULT_REGION,
+        "us-west-2",
+    )
+    monkeypatch.setenv(
+        "profile1" + "_" + environment_variables.AWS_S3_BUCKET,
+        "my_bucket",
+    )
+    monkeypatch.setenv("profile1" + "_" + environment_variables.S3_MOCK, "True")
+    ## profile2 env vars
+    monkeypatch.setenv(
+        "profile2" + "_" + environment_variables.AWS_ACCESS_KEY_ID,
+        "my_access_key",
+    )
+    monkeypatch.setenv(
+        "profile2" + "_" + environment_variables.AWS_SECRET_ACCESS_KEY,
+        "my_secret_key",
+    )
+    monkeypatch.setenv(
+        "profile2" + "_" + environment_variables.AWS_DEFAULT_REGION,
+        "us-west-2",
+    )
+    monkeypatch.setenv(
+        "profile2" + "_" + environment_variables.AWS_S3_BUCKET,
+        "my_bucket",
+    )
+    monkeypatch.setenv("profile2" + "_" + environment_variables.S3_MOCK, "True")
+    with mock_s3():
+        # create a mock S3 client
+        s3_client = boto3.client("s3")
+        # create a mock S3 bucket
+        s3_client.create_bucket(Bucket="my_bucket")
+        # upload the payload to the bucket
+        store = CCStoreS3()
+        # test WS store payload
+        store.set_payload( Payload(
+            attributes={},
+            stores=[
+                DataStore(
+                    name="store1",
+                    id="store_id1",
+                    parameters={"param1": "value1", "root": "store1_root"},
+                    store_type=StoreType.WS,
+                    ds_profile="profile1",
+                )
+            ],
+            inputs=[],
+            outputs=[],
+        ))
+        with pytest.raises(NotImplementedError):
+            PluginManager()
+        # test RDBMS store payload
+        store.set_payload( Payload(
+            attributes={},
+            stores=[
+                DataStore(
+                    name="store1",
+                    id="store_id1",
+                    parameters={"param1": "value1", "root": "store1_root"},
+                    store_type=StoreType.RDBMS,
+                    ds_profile="profile1",
+                )
+            ],
+            inputs=[],
+            outputs=[],
+        ))
+        with pytest.raises(NotImplementedError):
+            PluginManager()
+        # test EBS store payload
+        store.set_payload( Payload(
+            attributes={},
+            stores=[
+                DataStore(
+                    name="store1",
+                    id="store_id1",
+                    parameters={"param1": "value1", "root": "store1_root"},
+                    store_type=StoreType.EBS,
+                    ds_profile="profile1",
+                )
+            ],
+            inputs=[],
+            outputs=[],
+        ))
+        with pytest.raises(NotImplementedError):
+            PluginManager()
+        # cleanup mock s3 bucket
+        response = s3_client.list_objects_v2(Bucket="my_bucket")
+        if "Contents" in response:
+            delete_keys = [{"Key": obj["Key"]} for obj in response["Contents"]]
+            s3_client.delete_objects(
+                Bucket="my_bucket", Delete={"Objects": delete_keys}
+            )
+        s3_client.delete_bucket(Bucket="my_bucket")

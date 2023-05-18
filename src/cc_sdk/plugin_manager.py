@@ -99,13 +99,18 @@ class PluginManager:
                         store.session = FileDataStoreS3(store)
                     case StoreType.WS:
                         # TODO
-                        pass
+                        raise NotImplementedError("Payload StoreType 'WS' not implemented")
                     case StoreType.RDBMS:
                         # TODO
-                        pass
+                        raise NotImplementedError("Payload StoreType 'RDBMS' not implemented")
+                    case StoreType.EBS:
+                        # TODO
+                        raise NotImplementedError("Payload StoreType 'EBS' not implemented")
                     case _:
                         raise RuntimeError("Payload contains invalid StoreType.")
         except EnvironmentError as exc:
+            raise exc
+        except NotImplementedError as exc:
             raise exc
         except Exception as exc:
             raise RuntimeError(
