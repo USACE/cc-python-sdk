@@ -1,0 +1,6 @@
+[FORMAT]
+max-line-length=120
+disable = missing-docstring, unnecessary-lambda-assignment
+min-public-methods=0
+# Set the Python path
+init-hook='import sys; sys.path.append("./src")'
