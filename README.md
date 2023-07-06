@@ -1,17 +1,17 @@
 # cc-python-sdk
 
-[![PyPI version](https://badge.fury.io/py/cc_sdk.svg)](https://badge.fury.io/py/cc_sdk)
+[![PyPI version](https://badge.fury.io/py/cc-python-sdk.svg)](https://badge.fury.io/py/cc-python-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-cc_sdk is the Python Software Development Kit used to develop plugins for Cloud Compute.
+cc-python-sdk is the Python Software Development Kit used to develop plugins for Cloud Compute.
 
 ## Installation
 
-You can install cc_sdk in two ways: from source or through the pip package manager.
+You can install cc-python-sdk in two ways: from source or through the pip package manager.
 
 ### Installing from source
 
-To install cc_sdk from source, follow these steps:
+To install cc-python-sdk from source, follow these steps:
 
 1. Clone the repository:
 
@@ -44,7 +44,7 @@ pip install -r requirements.txt
 python3 -m pip install --upgrade build
 ```
 
-6. Build cc_sdk from the `pyproject.toml`:
+6. Build cc-python-sdk from the `pyproject.toml`:
 
 ```shell
 python3 -m build
@@ -53,7 +53,7 @@ python3 -m build
 7. Install the generated wheel (replace <version> with the version of the wheel file built):
 
 ```shell
-pip install dist/cc_sdk-<version>-py3-none-any.whl
+pip install dist/cc_python_sdk-<version>-py3-none-any.whl
 ```
 
 or 
@@ -62,7 +62,7 @@ or
 pip install dist/*.whl
 ```
 
-Now you have successfully installed cc_sdk from source.
+Now you have successfully installed cc-python-sdk from source.
 
 ## Install from pre-built distribution
 
@@ -74,17 +74,17 @@ pip install <path/to/wheel/*.whl>
 
 ### Installing through pip
 
-To install cc_sdk using pip, simply run the following command:
+To install cc-python-sdk using pip, simply run the following command:
 
 ```shell
-pip install cc_sdk
+pip install cc-python-sdk
 ```
 
-This will download the latest version of cc_sdk from the Python Package Index (PyPI) and install it into your Python environment.
+This will download the latest version of cc-python-sdk from the Python Package Index (PyPI) and install it into your Python environment.
 
 ## Usage
 
-Once cc_sdk is installed, you can start using its functionality in your Python projects. Here's a simple example:
+Once cc-python-sdk is installed, you can start using its functionality in your Python projects. Here's a simple example:
 
 ```python
 import cc_sdk
