@@ -89,7 +89,7 @@ class PluginManager:
 
     @classmethod
     def _init(cls):
-        cls._pattern = re.compile(r"(?<=\{).+?(?=\})")
+        cls._pattern = re.compile(r"(?<=\{).+?(?=\})") # matchs first string inside curly braces
         sender = os.getenv(environment_variables.CC_PLUGIN_DEFINITION)
         if sender is None:
             raise EnvironmentError(
@@ -161,7 +161,7 @@ class PluginManager:
                 )
 
     @classmethod
-    def _substitute_data_source_path(cls, path) -> str:
+    def substitute_paths(cls, path) -> str:
         """
         Substitute placeholders in a data source path with their corresponding values.
 
@@ -181,13 +181,13 @@ class PluginManager:
             prefix = parts[0]
             if prefix == "ENV":
                 val = os.getenv(parts[1])
-                path = path.replace(result, val)
+                path = path.replace("{" + result + "}", val)
             elif prefix == "ATTR":
                 try:
                     # pylint can't determine attributes type
                     # pylint: disable=unsubscriptable-object
                     valattr = str(cls._payload.attributes[parts[1]])
-                    path = path.replace(result, valattr)
+                    path = path.replace("{" + result + "}", valattr)
                 except KeyError as exc:
                     raise RuntimeError(
                         f"Payload attributes has no key {parts[1]}."
