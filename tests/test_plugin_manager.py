@@ -1,4 +1,5 @@
 import io
+import os
 import pytest
 import boto3
 from moto import mock_s3
@@ -44,12 +45,14 @@ def payload():
                 id="input_id1",
                 store_name="store1",
                 paths=["path/to/data1"],
+                data_paths=["{ENV::TEST_ENV_VAR}/path/to/{ATTR::attr1}"],
             ),
             DataSource(
                 name="input2",
                 id="input_id2",
                 store_name="store2",
                 paths=["path/to/data2"],
+                data_paths=[],
             ),
         ],
         outputs=[
@@ -58,12 +61,14 @@ def payload():
                 id="output_id1",
                 store_name="store1",
                 paths=["path/to/output1"],
+                data_paths=[],
             ),
             DataSource(
                 name="output2",
                 id="output_id2",
                 store_name="store2",
                 paths=["path/to/output2"],
+                data_paths=[],
             ),
         ],
     )
@@ -181,10 +186,13 @@ def plugin_manager(payload, monkeypatch):
 
 
 def test_get_payload(plugin_manager, payload):
+    os.environ["TEST_ENV_VAR"] = "test"
     test_payload = plugin_manager.get_payload()
     assert test_payload.attributes == payload.attributes
-    assert test_payload.inputs == payload.inputs
     assert test_payload.outputs == payload.outputs
+    assert test_payload.inputs[1] == payload.inputs[1]
+    # make sure path was substitited
+    assert test_payload.inputs[0].data_paths[0] == "test/path/to/value1"
 
 
 def test_get_file_store(plugin_manager):

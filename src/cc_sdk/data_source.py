@@ -16,7 +16,9 @@ class DataSource:
     - store_name : str
         The name of the data store used by this data source. readonly
     - paths : List[str]
-        The paths to the data in this data source. readonly
+        The paths in this data source. readonly
+    - data_paths : List[str]
+        The data paths in this data source. readonly
 
     Methods:
     - serialize(): Returns a JSON string representation of the attributes.
@@ -36,6 +38,13 @@ class DataSource:
         validator=[validators.instance_of(str)],
     )
     paths: list[str] = field(
+        validator=[
+            lambda instance, attribute, value: validate_homogeneous_list(
+                instance, attribute, value, str
+            )
+        ]
+    )
+    data_paths: list[str] = field(
         validator=[
             lambda instance, attribute, value: validate_homogeneous_list(
                 instance, attribute, value, str

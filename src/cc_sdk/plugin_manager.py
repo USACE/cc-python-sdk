@@ -80,7 +80,7 @@ class PluginManager:
     """
 
     _instance = None  # the instance of this singleton class
-    _has_updated_paths = False # have the paths been updated? this happens the first time the payload is requested with get_payload()
+    _has_updated_paths = False  # have the paths been updated? this happens the first time the payload is requested with get_payload()
 
     def __new__(cls):
         if not cls._instance:
@@ -151,13 +151,36 @@ class PluginManager:
         """
         # pylint can't determine types from Payload
         # pylint: disable=unsubscriptable-object
-        for i, input_obj in enumerate(cls._payload.inputs):
-            for j, path in enumerate(input_obj.paths):
-                cls._payload.inputs[i].paths[j] = cls.substitute_paths(path)
-
-        for i, output_obj in enumerate(cls._payload.outputs):
-            for j, path in enumerate(output_obj.paths):
-                cls._payload.outputs[i].paths[j] = cls.substitute_paths(path)
+        for i, _ in enumerate(cls._payload.inputs):
+            existing_data_source = cls._payload.inputs[i]
+            updated_data_source = DataSource(
+                name=cls.substitute_paths(existing_data_source.name),
+                id=existing_data_source.id,
+                store_name=existing_data_source.store_name,
+                paths=[
+                    cls.substitute_paths(path) for path in existing_data_source.paths
+                ],
+                data_paths=[
+                    cls.substitute_paths(path)
+                    for path in existing_data_source.data_paths
+                ],
+            )
+            cls._payload.inputs[i] = updated_data_source
+        for i, _ in enumerate(cls._payload.outputs):
+            existing_data_source = cls._payload.outputs[i]
+            updated_data_source = DataSource(
+                name=cls.substitute_paths(existing_data_source.name),
+                id=existing_data_source.id,
+                store_name=existing_data_source.store_name,
+                paths=[
+                    cls.substitute_paths(path) for path in existing_data_source.paths
+                ],
+                data_paths=[
+                    cls.substitute_paths(path)
+                    for path in existing_data_source.data_paths
+                ],
+            )
+            cls._payload.outputs[i] = updated_data_source
         # TODO: substitute paths for actions once they are implemented
 
     @classmethod
@@ -181,6 +204,8 @@ class PluginManager:
             prefix = parts[0]
             if prefix == "ENV":
                 val = os.getenv(parts[1])
+                if val is None:
+                    raise EnvironmentError(f"Environment variable {parts[1]} is not set but required for path '{path}'")
                 path = path.replace("{" + result + "}", val)
             elif prefix == "ATTR":
                 try:
