@@ -16,9 +16,9 @@ class DataSource:
     - store_name : str
         The name of the data store used by this data source. readonly
     - paths : List[str]
-        The paths in this data source. readonly
+        The paths to datasets in this data source. readonly
     - data_paths : List[str]
-        The data paths in this data source. readonly
+        The 'data paths' (paths to data within a dataset) in this data source. readonly
 
     Methods:
     - serialize(): Returns a JSON string representation of the attributes.
