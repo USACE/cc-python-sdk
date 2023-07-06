@@ -79,7 +79,8 @@ class PluginManager:
         Returns the event number associated with the current instance.
     """
 
-    _instance = None # the instance of this singleton class
+    _instance = None  # the instance of this singleton class
+    _has_updated_paths = False # have the paths been updated? this happens the first time the payload is requested with get_payload()
 
     def __new__(cls):
         if not cls._instance:
@@ -89,7 +90,9 @@ class PluginManager:
 
     @classmethod
     def _init(cls):
-        cls._pattern = re.compile(r"(?<=\{).+?(?=\})") # matchs first string inside curly braces
+        cls._pattern = re.compile(
+            r"(?<=\{).+?(?=\})"
+        )  # matchs first string inside curly braces
         sender = os.getenv(environment_variables.CC_PLUGIN_DEFINITION)
         if sender is None:
             raise EnvironmentError(
@@ -150,15 +153,12 @@ class PluginManager:
         # pylint: disable=unsubscriptable-object
         for i, input_obj in enumerate(cls._payload.inputs):
             for j, path in enumerate(input_obj.paths):
-                cls._payload.inputs[i].paths[j] = cls._substitute_data_source_path(
-                    path
-                )
+                cls._payload.inputs[i].paths[j] = cls.substitute_paths(path)
 
         for i, output_obj in enumerate(cls._payload.outputs):
             for j, path in enumerate(output_obj.paths):
-                cls._payload.outputs[i].paths[j] = cls._substitute_data_source_path(
-                    path
-                )
+                cls._payload.outputs[i].paths[j] = cls.substitute_paths(path)
+        # TODO: substitute paths for actions once they are implemented
 
     @classmethod
     def substitute_paths(cls, path) -> str:
@@ -197,6 +197,9 @@ class PluginManager:
 
     @classmethod
     def get_payload(cls) -> Payload:
+        if not cls._has_updated_paths:
+            cls._substitute_path_variables()
+            cls._has_updated_paths = True
         return cls._payload
 
     @classmethod
