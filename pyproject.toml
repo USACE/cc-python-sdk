@@ -1,0 +1,24 @@
+[project]
+name = "cc_sdk"
+version = "0.0.1"
+authors = [
+  { name="Will Lehman", email="William.P.Lehman@usace.army.mil" },
+  { name="Brendan Barnes", email="brendan.barnes@mbakerintl.com" },
+  { name="Thomas Williams", email="thomas.williams@wsp.com" },
+]
+description = "The Python SDK for developing plugins for Cloud Compute"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  'attrs >= 22.2.0',
+  'boto3 >= 1.26.93',
+]
+
+[project.urls]
+"Homepage" = "https://github.com/USACE/cc-python-sdk"
+"Bug Tracker" = "https://github.com/USACE/cc-python-sdk/issues"
