@@ -1,6 +1,6 @@
 [project]
-name = "cc_sdk"
-version = "0.0.1"
+name = "cc-python-sdk"
+version = "0.0.2"
 authors = [
   { name="Will Lehman", email="William.P.Lehman@usace.army.mil" },
   { name="Brendan Barnes", email="brendan.barnes@mbakerintl.com" },

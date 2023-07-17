@@ -351,12 +351,14 @@ def payload():
                 id="input_id1",
                 store_name="store1",
                 paths=["/path/to/data1"],
+                data_paths=[],
             ),
             DataSource(
                 name="input2",
                 id="input_id2",
                 store_name="store2",
                 paths=["/path/to/data2"],
+                data_paths=[],
             ),
         ],
         outputs=[
@@ -365,12 +367,14 @@ def payload():
                 id="output_id1",
                 store_name="store1",
                 paths=["/path/to/output1"],
+                data_paths=[],
             ),
             DataSource(
                 name="output2",
                 id="output_id2",
                 store_name="store2",
                 paths=["/path/to/output2"],
+                data_paths=[],
             ),
         ],
     )
@@ -381,10 +385,10 @@ def test_read_json_model_payload_from_bytes(payload):
         "parameters": {"param1": "value1"}, "store_type": "S3", "ds_profile": "profile1", "session": null}, \
             {"name": "store2", "id": "store_id2", "parameters": {"param2": "value2"}, "store_type": "S3", \
                 "ds_profile": "profile2", "session": null}], "inputs": [{"name": "input1", "id": "input_id1", \
-                    "store_name": "store1", "paths": ["/path/to/data1"]}, {"name": "input2", "id": "input_id2", \
-                        "store_name": "store2", "paths": ["/path/to/data2"]}], "outputs": [{"name": "output1", "id": \
-                            "output_id1", "store_name": "store1", "paths": ["/path/to/output1"]}, {"name": "output2", \
-                                "id": "output_id2", "store_name": "store2", "paths": ["/path/to/output2"]}]}'
+                    "store_name": "store1", "paths": ["/path/to/data1"], "data_paths": []}, {"name": "input2", "id": "input_id2", \
+                        "store_name": "store2", "paths": ["/path/to/data2"], "data_paths": []}], "outputs": [{"name": "output1", "id": \
+                            "output_id1", "store_name": "store1", "paths": ["/path/to/output1"], "data_paths": []}, {"name": "output2", \
+                                "id": "output_id2", "store_name": "store2", "paths": ["/path/to/output2"], "data_paths": []}]}'
     assert payload == CCStoreS3._read_json_model_payload_from_bytes(payload_bytes)
 
 

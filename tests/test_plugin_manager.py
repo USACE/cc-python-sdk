@@ -1,5 +1,5 @@
 import io
-from unittest import mock
+import os
 import pytest
 import boto3
 from moto import mock_s3
@@ -7,8 +7,6 @@ from cc_sdk import (
     PluginManager,
     DataSource,
     DataStore,
-    Error,
-    Message,
     Payload,
     StoreType,
     environment_variables,
@@ -47,12 +45,14 @@ def payload():
                 id="input_id1",
                 store_name="store1",
                 paths=["path/to/data1"],
+                data_paths=["{ENV::TEST_ENV_VAR}/path/to/{ATTR::attr1}"],
             ),
             DataSource(
                 name="input2",
                 id="input_id2",
                 store_name="store2",
                 paths=["path/to/data2"],
+                data_paths=[],
             ),
         ],
         outputs=[
@@ -61,12 +61,14 @@ def payload():
                 id="output_id1",
                 store_name="store1",
                 paths=["path/to/output1"],
+                data_paths=[],
             ),
             DataSource(
                 name="output2",
                 id="output_id2",
                 store_name="store2",
                 paths=["path/to/output2"],
+                data_paths=[],
             ),
         ],
     )
@@ -184,10 +186,13 @@ def plugin_manager(payload, monkeypatch):
 
 
 def test_get_payload(plugin_manager, payload):
+    os.environ["TEST_ENV_VAR"] = "test"
     test_payload = plugin_manager.get_payload()
     assert test_payload.attributes == payload.attributes
-    assert test_payload.inputs == payload.inputs
     assert test_payload.outputs == payload.outputs
+    assert test_payload.inputs[1] == payload.inputs[1]
+    # make sure path was substitited
+    assert test_payload.inputs[0].data_paths[0] == "test/path/to/value1"
 
 
 def test_get_file_store(plugin_manager):
@@ -340,56 +345,78 @@ def test_unimplemented_store_types(monkeypatch):
         # upload the payload to the bucket
         store = CCStoreS3()
         # test WS store payload
-        store.set_payload( Payload(
-            attributes={},
-            stores=[
-                DataStore(
-                    name="store1",
-                    id="store_id1",
-                    parameters={"param1": "value1", "root": "store1_root"},
-                    store_type=StoreType.WS,
-                    ds_profile="profile1",
-                )
-            ],
-            inputs=[],
-            outputs=[],
-        ))
+        store.set_payload(
+            Payload(
+                attributes={},
+                stores=[
+                    DataStore(
+                        name="store1",
+                        id="store_id1",
+                        parameters={"param1": "value1", "root": "store1_root"},
+                        store_type=StoreType.WS,
+                        ds_profile="profile1",
+                    )
+                ],
+                inputs=[],
+                outputs=[],
+            )
+        )
+        # pylint: disable=protected-access
+        PluginManager._instance = (
+            None  # don't do this in real code, it defeats the purpose of a singleton.
+        )
         with pytest.raises(NotImplementedError):
             PluginManager()
+        # pylint: disable=protected-access
+        PluginManager._instance = (
+            None  # don't do this in real code, it defeats the purpose of a singleton.
+        )
         # test RDBMS store payload
-        store.set_payload( Payload(
-            attributes={},
-            stores=[
-                DataStore(
-                    name="store1",
-                    id="store_id1",
-                    parameters={"param1": "value1", "root": "store1_root"},
-                    store_type=StoreType.RDBMS,
-                    ds_profile="profile1",
-                )
-            ],
-            inputs=[],
-            outputs=[],
-        ))
+        store.set_payload(
+            Payload(
+                attributes={},
+                stores=[
+                    DataStore(
+                        name="store1",
+                        id="store_id1",
+                        parameters={"param1": "value1", "root": "store1_root"},
+                        store_type=StoreType.RDBMS,
+                        ds_profile="profile1",
+                    )
+                ],
+                inputs=[],
+                outputs=[],
+            )
+        )
         with pytest.raises(NotImplementedError):
             PluginManager()
+        # pylint: disable=protected-access
+        PluginManager._instance = (
+            None  # don't do this in real code, it defeats the purpose of a singleton.
+        )
         # test EBS store payload
-        store.set_payload( Payload(
-            attributes={},
-            stores=[
-                DataStore(
-                    name="store1",
-                    id="store_id1",
-                    parameters={"param1": "value1", "root": "store1_root"},
-                    store_type=StoreType.EBS,
-                    ds_profile="profile1",
-                )
-            ],
-            inputs=[],
-            outputs=[],
-        ))
+        store.set_payload(
+            Payload(
+                attributes={},
+                stores=[
+                    DataStore(
+                        name="store1",
+                        id="store_id1",
+                        parameters={"param1": "value1", "root": "store1_root"},
+                        store_type=StoreType.EBS,
+                        ds_profile="profile1",
+                    )
+                ],
+                inputs=[],
+                outputs=[],
+            )
+        )
         with pytest.raises(NotImplementedError):
             PluginManager()
+        # pylint: disable=protected-access
+        PluginManager._instance = (
+            None  # don't do this in real code, it defeats the purpose of a singleton.
+        )
         # cleanup mock s3 bucket
         response = s3_client.list_objects_v2(Bucket="my_bucket")
         if "Contents" in response:

@@ -25,87 +25,105 @@ class PluginManager:
 
 
     Methods:
-        get_payload(self) -> Payload:
+        get_payload(cls) -> Payload:
         Returns the payload object associated with the current plugin.
 
-        get_file_store(self, store_name: str) -> FileDataStore:
+        get_file_store(cls, store_name: str) -> FileDataStore:
         Finds the data store with the given name and returns its file data store session object.
 
-        get_store(self, store_name: str) -> DataStore:
+        get_store(cls, store_name: str) -> DataStore:
         Finds the data store with the given name and returns the data store object.
 
-        get_input_data_source(self, name: str) -> DataSource:
+        get_input_data_source(cls, name: str) -> DataSource:
         Finds the input data source with the given name and returns its data source object.
 
-        get_output_data_source(self, name: str) -> DataSource:
+        get_output_data_source(cls, name: str) -> DataSource:
         Finds the output data source with the given name and returns its data source object.
 
-        get_input_data_sources(self) -> list[DataSource]:
+        get_input_data_sources(cls) -> list[DataSource]:
         Returns a list of all input data sources in the payload.
 
-        get_output_data_sources(self) -> list[DataSource]:
+        get_output_data_sources(cls) -> list[DataSource]:
         Returns a list of all output data sources in the payload.
 
-        get_file(self, data_source: DataSource, path_index: int) -> bytes | None:
+        get_file(cls, data_source: DataSource, path_index: int) -> bytes | None:
         Returns the content of a file associated with the specified data source and path index.
 
-        put_file(self, data: bytes, data_source: DataSource, path_index: int) -> bool:
+        put_file(cls, data: bytes, data_source: DataSource, path_index: int) -> bool:
         Stores the given data in the file associated with the specified data source and path index.
 
-        file_writer(self, input_stream: io.BytesIO, dest_data_source: DataSource, dest_path_index: int) -> bool:
+        file_writer(cls, input_stream: io.BytesIO, dest_data_source: DataSource, dest_path_index: int) -> bool:
         Stores data from the given input stream in the file associated with the specified data source and path index.
 
-        file_reader(self, data_source: DataSource, path_index: int) -> io.BytesIO:
+        file_reader(cls, data_source: DataSource, path_index: int) -> io.BytesIO:
         Returns a stream object that can be used to read the contents of the file associated with the specified data
         source and path index.
 
-        file_reader_by_name(self, data_source_name: str, path_index: int) -> io.BytesIO:
+        file_reader_by_name(cls, data_source_name: str, path_index: int) -> io.BytesIO:
         Returns a stream object that can be used to read the contents of the file associated with the data source with
         the specified name and path index.
 
-        set_log_level(self, level: ErrorLevel) -> None:
+        set_log_level(cls, level: ErrorLevel) -> None:
         Sets the logging level for the current instance.
 
-        log_message(self, message: Message) -> None:
+        log_message(cls, message: Message) -> None:
         Logs the given message object.
 
-        log_error(self, error: Error) -> None:
+        log_error(cls, error: Error) -> None:
         Logs the given error object.
 
-        report_progress(self, report: Status) -> None:
+        report_progress(cls, report: Status) -> None:
         Logs a progress report.
 
-        event_number(self) -> int:
+        event_number(cls) -> int:
         Returns the event number associated with the current instance.
     """
 
-    def __init__(self):
-        self._pattern = re.compile(r"(?<=\{).+?(?=\})")
+    _instance = None  # the instance of this singleton class
+    _has_updated_paths = False  # have the paths been updated? this happens the first time the payload is requested with get_payload()
+
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+            cls._init()
+        return cls._instance
+
+    @classmethod
+    def _init(cls):
+        cls._pattern = re.compile(
+            r"(?<=\{).+?(?=\})"
+        )  # matchs first string inside curly braces
         sender = os.getenv(environment_variables.CC_PLUGIN_DEFINITION)
         if sender is None:
             raise EnvironmentError(
                 f"{environment_variables.CC_PLUGIN_DEFINITION} environment variable not set"
             )
-        self._logger = Logger(ErrorLevel.DEBUG, sender)
-        self._cc_store = CCStoreS3()
+        cls._logger = Logger(ErrorLevel.DEBUG, sender)
+        cls._cc_store = CCStoreS3()
         try:
-            self._payload: Payload = self._cc_store.get_payload()
+            cls._payload: Payload = cls._cc_store.get_payload()
             # pylint can't determine stores type
             # pylint: disable=not-an-iterable
-            for store in self._payload.stores:
+            for store in cls._payload.stores:
                 match store.store_type:
                     case StoreType.S3:
                         # store is a reference so this updates the payload object
                         store.session = FileDataStoreS3(store)
                     case StoreType.WS:
                         # TODO
-                        raise NotImplementedError("Payload StoreType 'WS' not implemented")
+                        raise NotImplementedError(
+                            "Payload StoreType 'WS' not implemented"
+                        )
                     case StoreType.RDBMS:
                         # TODO
-                        raise NotImplementedError("Payload StoreType 'RDBMS' not implemented")
+                        raise NotImplementedError(
+                            "Payload StoreType 'RDBMS' not implemented"
+                        )
                     case StoreType.EBS:
                         # TODO
-                        raise NotImplementedError("Payload StoreType 'EBS' not implemented")
+                        raise NotImplementedError(
+                            "Payload StoreType 'EBS' not implemented"
+                        )
                     case _:
                         raise RuntimeError("Payload contains invalid StoreType.")
         except EnvironmentError as exc:
@@ -117,7 +135,8 @@ class PluginManager:
                 f"Could not acquire payload file. ERROR: {str(exc)}"
             ) from exc
 
-    def _substitute_path_variables(self) -> None:
+    @classmethod
+    def _substitute_path_variables(cls) -> None:
         """
         Substitute placeholders in all input and output paths of the payload.
 
@@ -132,19 +151,40 @@ class PluginManager:
         """
         # pylint can't determine types from Payload
         # pylint: disable=unsubscriptable-object
-        for i, input_obj in enumerate(self._payload.inputs):
-            for j, path in enumerate(input_obj.paths):
-                self._payload.inputs[i].paths[j] = self._substitute_data_source_path(
-                    path
-                )
+        for i, _ in enumerate(cls._payload.inputs):
+            existing_data_source = cls._payload.inputs[i]
+            updated_data_source = DataSource(
+                name=cls.substitute_paths(existing_data_source.name),
+                id=existing_data_source.id,
+                store_name=existing_data_source.store_name,
+                paths=[
+                    cls.substitute_paths(path) for path in existing_data_source.paths
+                ],
+                data_paths=[
+                    cls.substitute_paths(path)
+                    for path in existing_data_source.data_paths
+                ],
+            )
+            cls._payload.inputs[i] = updated_data_source
+        for i, _ in enumerate(cls._payload.outputs):
+            existing_data_source = cls._payload.outputs[i]
+            updated_data_source = DataSource(
+                name=cls.substitute_paths(existing_data_source.name),
+                id=existing_data_source.id,
+                store_name=existing_data_source.store_name,
+                paths=[
+                    cls.substitute_paths(path) for path in existing_data_source.paths
+                ],
+                data_paths=[
+                    cls.substitute_paths(path)
+                    for path in existing_data_source.data_paths
+                ],
+            )
+            cls._payload.outputs[i] = updated_data_source
+        # TODO: substitute paths for actions once they are implemented
 
-        for i, output_obj in enumerate(self._payload.outputs):
-            for j, path in enumerate(output_obj.paths):
-                self._payload.outputs[i].paths[j] = self._substitute_data_source_path(
-                    path
-                )
-
-    def _substitute_data_source_path(self, path) -> str:
+    @classmethod
+    def substitute_paths(cls, path) -> str:
         """
         Substitute placeholders in a data source path with their corresponding values.
 
@@ -157,64 +197,77 @@ class PluginManager:
         Raises:
             RuntimeError: If a placeholder refers to a missing attribute in the payload's `attributes` dictionary.
         """
-        the_match = self._pattern.search(path)
+        the_match = cls._pattern.search(path)
         while the_match:
             result = the_match.group()
             parts = result.split("::", 1)
             prefix = parts[0]
             if prefix == "ENV":
                 val = os.getenv(parts[1])
-                path = path.replace(result, val)
+                if val is None:
+                    raise EnvironmentError(f"Environment variable {parts[1]} is not set but required for path '{path}'")
+                path = path.replace("{" + result + "}", val)
             elif prefix == "ATTR":
                 try:
                     # pylint can't determine attributes type
                     # pylint: disable=unsubscriptable-object
-                    valattr = str(self._payload.attributes[parts[1]])
-                    path = path.replace(result, valattr)
+                    valattr = str(cls._payload.attributes[parts[1]])
+                    path = path.replace("{" + result + "}", valattr)
                 except KeyError as exc:
                     raise RuntimeError(
                         f"Payload attributes has no key {parts[1]}."
                     ) from exc
-            the_match = self._pattern.search(path)
+            the_match = cls._pattern.search(path)
         return path
 
-    def get_payload(self) -> Payload:
-        return self._payload
+    @classmethod
+    def get_payload(cls) -> Payload:
+        if not cls._has_updated_paths:
+            cls._substitute_path_variables()
+            cls._has_updated_paths = True
+        return cls._payload
 
-    def get_file_store(self, store_name: str) -> FileDataStore:
-        data_store = self._find_data_store(store_name)
+    @classmethod
+    def get_file_store(cls, store_name: str) -> FileDataStore:
+        data_store = cls._find_data_store(store_name)
         if data_store is None:
             raise RuntimeError(f"DataStore with name '{store_name}' was not found.")
         if isinstance(data_store.session, FileDataStore):
             return data_store.session
         raise RuntimeError("DataStore session object is invalid.")
 
-    def get_store(self, store_name: str) -> DataStore:
-        data_store = self._find_data_store(store_name)
+    @classmethod
+    def get_store(cls, store_name: str) -> DataStore:
+        data_store = cls._find_data_store(store_name)
         if data_store is None:
             raise RuntimeError(f"DataStore with name '{store_name}' was not found")
         return data_store
 
-    def get_input_data_source(self, name: str) -> DataSource:
-        data_source = self._find_data_source(name, self.get_input_data_sources())
+    @classmethod
+    def get_input_data_source(cls, name: str) -> DataSource:
+        data_source = cls._find_data_source(name, cls.get_input_data_sources())
         if data_source is None:
             raise RuntimeError(f"Input DataSource with name '{name}' was not found")
         return data_source
 
-    def get_output_data_source(self, name: str) -> DataSource:
-        data_source = self._find_data_source(name, self.get_output_data_sources())
+    @classmethod
+    def get_output_data_source(cls, name: str) -> DataSource:
+        data_source = cls._find_data_source(name, cls.get_output_data_sources())
         if data_source is None:
             raise RuntimeError(f"Output DataSource with name '{name}' was not found")
         return data_source
 
-    def get_input_data_sources(self) -> list[DataSource]:
-        return self._payload.inputs
+    @classmethod
+    def get_input_data_sources(cls) -> list[DataSource]:
+        return cls._payload.inputs
 
-    def get_output_data_sources(self) -> list[DataSource]:
-        return self._payload.outputs
+    @classmethod
+    def get_output_data_sources(cls) -> list[DataSource]:
+        return cls._payload.outputs
 
-    def get_file(self, data_source: DataSource, path_index: int) -> bytes | None:
-        store = self.get_file_store(data_source.store_name)
+    @classmethod
+    def get_file(cls, data_source: DataSource, path_index: int) -> bytes | None:
+        store = cls.get_file_store(data_source.store_name)
         try:
             reader = store.get(data_source.paths[path_index])
             data = reader.getvalue()
@@ -224,46 +277,55 @@ class PluginManager:
         except IndexError:
             return None
 
-    def put_file(self, data: bytes, data_source: DataSource, path_index: int) -> bool:
-        store = self.get_file_store(data_source.store_name)
+    @classmethod
+    def put_file(cls, data: bytes, data_source: DataSource, path_index: int) -> bool:
+        store = cls.get_file_store(data_source.store_name)
         return store.put(io.BytesIO(data), data_source.paths[path_index])
 
+    @classmethod
     def file_writer(
-        self,
+        cls,
         input_stream: io.BytesIO,
         dest_data_source: DataSource,
         dest_path_index: int,
     ) -> bool:
-        store = self.get_file_store(dest_data_source.store_name)
+        store = cls.get_file_store(dest_data_source.store_name)
         return store.put(input_stream, dest_data_source.paths[dest_path_index])
 
-    def file_reader(self, data_source: DataSource, path_index: int) -> io.BytesIO:
-        store = self.get_file_store(data_source.store_name)
+    @classmethod
+    def file_reader(cls, data_source: DataSource, path_index: int) -> io.BytesIO:
+        store = cls.get_file_store(data_source.store_name)
         return store.get(data_source.paths[path_index])
 
-    def file_reader_by_name(self, data_source_name: str, path_index: int) -> io.BytesIO:
-        data_source = self._find_data_source(
-            data_source_name, self.get_input_data_sources()
+    @classmethod
+    def file_reader_by_name(cls, data_source_name: str, path_index: int) -> io.BytesIO:
+        data_source = cls._find_data_source(
+            data_source_name, cls.get_input_data_sources()
         )
         if data_source is None:
             raise RuntimeError(
                 f"Input DataSource with name: '{data_source_name}' not found."
             )
-        return self.file_reader(data_source, path_index)
+        return cls.file_reader(data_source, path_index)
 
-    def set_log_level(self, level: ErrorLevel) -> None:
-        self._logger.set_error_level(level)
+    @classmethod
+    def set_log_level(cls, level: ErrorLevel) -> None:
+        cls._logger.set_error_level(level)
 
-    def log_message(self, message: Message) -> None:
-        self._logger.log_message(message)
+    @classmethod
+    def log_message(cls, message: Message) -> None:
+        cls._logger.log_message(message)
 
-    def log_error(self, error: Error) -> None:
-        self._logger.log_error(error)
+    @classmethod
+    def log_error(cls, error: Error) -> None:
+        cls._logger.log_error(error)
 
-    def report_progress(self, report: Status) -> None:
-        self._logger.report_status(report)
+    @classmethod
+    def report_progress(cls, report: Status) -> None:
+        cls._logger.report_status(report)
 
-    def event_number(self) -> int:
+    @classmethod
+    def event_number(cls) -> int:
         val = os.getenv(environment_variables.CC_EVENT_NUMBER)
         if val is None:
             raise EnvironmentError(
@@ -272,18 +334,20 @@ class PluginManager:
         event_number = int(val)
         return event_number
 
+    @classmethod
     def _find_data_source(
-        self, name: str, data_sources: list[DataSource]
+        cls, name: str, data_sources: list[DataSource]
     ) -> DataSource | None:
         for data_source in data_sources:
             if data_source.name.lower() == name.lower():
                 return data_source
         return None
 
-    def _find_data_store(self, name: str) -> DataStore | None:
+    @classmethod
+    def _find_data_store(cls, name: str) -> DataStore | None:
         # pylint can't determine attributes type
         # pylint: disable=not-an-iterable
-        for data_store in self._payload.stores:
+        for data_store in cls._payload.stores:
             if data_store.name.lower() == name.lower():
                 return data_store
         return None
